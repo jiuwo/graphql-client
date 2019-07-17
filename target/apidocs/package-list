@@ -1,0 +1,4 @@
+org.jiuwo.graphql.client
+org.jiuwo.graphql.client.contract
+org.jiuwo.graphql.client.enums
+org.jiuwo.graphql.client.util

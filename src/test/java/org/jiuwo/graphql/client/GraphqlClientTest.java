@@ -17,7 +17,7 @@ public class GraphqlClientTest {
 
     @Before
     public void setUp() {
-        client = new GraphqlClient();
+
     }
 
     @Test

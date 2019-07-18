@@ -1,11 +1,11 @@
 package org.jiuwo.graphql.client;
 
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.jiuwo.graphql.client.contract.ExecutionResult;
 import org.jiuwo.graphql.client.contract.GraphqlRequest;
-import org.jiuwo.graphql.client.contract.RequestParameter;
 import org.jiuwo.graphql.client.contract.ResultAttribute;
 import org.jiuwo.graphql.client.enums.RequestTypeEnum;
 import org.jiuwo.graphql.client.util.HttpUtil;
@@ -20,9 +20,18 @@ public class GraphqlClient {
     private String url;
 
     /**
-     * 请求对象
+     * 请求类型
      */
-    private GraphqlRequest request;
+    private RequestTypeEnum requestType = RequestTypeEnum.QUERY;
+
+    /**
+     * Headers
+     */
+    private Map<String, String> headers = new HashMap<>();
+
+    private int currentRequestIndex = 0;
+
+    private Map<Integer, GraphqlRequest> requestMap = new HashMap<>();
 
     /**
      * build GraphqlClient 并初使化request
@@ -31,7 +40,6 @@ public class GraphqlClient {
      */
     public static GraphqlClient build() {
         GraphqlClient graphqlClient = new GraphqlClient();
-        graphqlClient.request = new GraphqlRequest();
         return graphqlClient;
     }
 
@@ -41,31 +49,29 @@ public class GraphqlClient {
      * @return 执行结果
      */
     public ExecutionResult execute() {
-        if (request.getRequestType().equals(RequestTypeEnum.QUERY)) {
-            return query(request);
+        if (this.requestType.equals(RequestTypeEnum.QUERY)) {
+            return query();
         } else {
-            return mutation(request);
+            return mutation();
         }
     }
 
     /**
      * Queryy请求
      *
-     * @param request Request
      * @return 查询结果
      */
-    private ExecutionResult query(GraphqlRequest request) {
-        return HttpUtil.postJson(url, request.toString(), request.getHeaders(), ExecutionResult.class);
+    private ExecutionResult query() {
+        return HttpUtil.postJson(url, this.toString(), this.headers, ExecutionResult.class);
     }
 
     /**
      * Mutation请求
      *
-     * @param request Request
      * @return 操作结果
      */
-    private ExecutionResult mutation(GraphqlRequest request) {
-        return HttpUtil.postJson(url, request.toString(), request.getHeaders(), ExecutionResult.class);
+    private ExecutionResult mutation() {
+        return HttpUtil.postJson(url, this.toString(), this.headers, ExecutionResult.class);
     }
 
     /**
@@ -80,44 +86,6 @@ public class GraphqlClient {
     }
 
     /**
-     * 增加返回字段
-     *
-     * @param names 字段名
-     * @return this
-     */
-    public GraphqlClient addResultAttributes(String... names) {
-        if (names != null && names.length > 0) {
-            for (String key : names) {
-                request.getResultAttributes().add(ResultAttribute.build().setName(key));
-            }
-        }
-        return this;
-    }
-
-    /**
-     * 增加返回字段
-     *
-     * @param rootName 根节点名
-     * @param names    节点
-     * @return this
-     */
-    public GraphqlClient addResultAttribute(String rootName, String... names) {
-        request.getResultAttributes().add(ResultAttribute.build().setName(rootName).addChildrenResultAttribute(names));
-        return this;
-    }
-
-    /**
-     * 设置返回字段
-     *
-     * @param resultAttributes 返回字段
-     * @return this
-     */
-    public GraphqlClient setResultAttribute(List<ResultAttribute> resultAttributes) {
-        request.setResultAttributes(resultAttributes);
-        return this;
-    }
-
-    /**
      * 增加Header
      *
      * @param key   Header名
@@ -125,7 +93,7 @@ public class GraphqlClient {
      * @return this
      */
     public GraphqlClient addHeader(String key, String value) {
-        request.getHeaders().put(key, value);
+        this.headers.put(key, value);
         return this;
     }
 
@@ -135,53 +103,60 @@ public class GraphqlClient {
      * @param headers Headers
      * @return this
      */
-    public GraphqlClient setHeader(Map<String, String> headers) {
-        request.setHeaders(headers);
+    public GraphqlClient headers(Map<String, String> headers) {
+        this.headers = headers;
         return this;
     }
 
-    /**
-     * 增加参数
-     *
-     * @param key   参数名
-     * @param value 参数值
-     * @return this
-     */
-    public GraphqlClient addParameter(String key, Object value) {
-        request.getRequestParameter().addParameter(key, value);
+    public GraphqlClient addRequest(GraphqlRequest request) {
+        this.currentRequestIndex++;
+        this.requestMap.put(this.currentRequestIndex, request);
         return this;
     }
 
-    /**
-     * 设置参数
-     *
-     * @param requestParameter 参数
-     * @return this
-     */
-    public GraphqlClient setParameter(RequestParameter requestParameter) {
-        request.setRequestParameter(requestParameter);
+    public GraphqlClient requestType(RequestTypeEnum requestType) {
+        this.requestType = requestType;
         return this;
     }
 
-    /**
-     * 设置请求名
-     *
-     * @param requestName 请求名
-     * @return this
-     */
-    public GraphqlClient setRequestName(String requestName) {
-        request.setRequestName(requestName);
-        return this;
+    private GraphqlRequest getRequest(int index) {
+        return requestMap.get(index);
+    }
+
+    private GraphqlRequest getRequest() {
+        return getRequest(this.currentRequestIndex);
     }
 
     /**
-     * 设置请求类型
+     * 重写toString
      *
-     * @param requestType 请求类型
-     * @return this
+     * @return 结果
      */
-    public GraphqlClient setRequestType(RequestTypeEnum requestType) {
-        request.setRequestType(requestType);
-        return this;
+    @Override
+    public String toString() {
+        String query = "{\"query\":\"%s{%s}\"}";
+        StringBuilder requestBuilder = new StringBuilder();
+        this.requestMap.forEach((k, v) -> {
+            String parameters = v.getRequestParameter().toString();
+            requestBuilder.append(v.getRequestName());
+            requestBuilder.append(parameters);
+            requestBuilder.append("{");
+            requestBuilder.append(v.getResultAttributes().stream().map(ResultAttribute::toString).collect(Collectors.joining(" ")));
+            requestBuilder.append("}");
+        });
+        return String.format(query, requestType.equals(RequestTypeEnum.QUERY) ? "" : "mutation", requestBuilder.toString());
+    }
+
+    public static void main(String[] args) {
+        String url = "http://localhost:8080/graphql";
+        ExecutionResult object = GraphqlClient
+                .build()
+                .url(url)
+                .requestType(RequestTypeEnum.QUERY)
+                .addHeader("hash", "haha")
+                .addRequest(GraphqlRequest.build("findBooks").addResultAttributes("id name").addResultAttribute("author", "id", "name"))
+                .addRequest(GraphqlRequest.build("findAuthors").addResultAttributes("id name"))
+                .execute();
+        System.out.println(object);
     }
 }

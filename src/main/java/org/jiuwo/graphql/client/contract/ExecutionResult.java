@@ -12,7 +12,7 @@ import lombok.ToString;
 @ToString
 @Getter
 @Setter
-public class ExecutionResult {
+public class ExecutionResult<T> {
     /**
      * 返回Data
      */
@@ -22,4 +22,6 @@ public class ExecutionResult {
      * 错误信息
      */
     private List<GraphqlError> errors;
+
+    private T dataSingle;
 }

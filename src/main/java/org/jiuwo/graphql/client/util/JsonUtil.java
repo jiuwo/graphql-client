@@ -1,5 +1,6 @@
 package org.jiuwo.graphql.client.util;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 import com.alibaba.fastjson.JSON;
@@ -61,8 +62,12 @@ public class JsonUtil {
         return JSON.parse(json);
     }
 
-    public static <T> T toObject(String text, Class<T> clazz) {
-        return JSON.parseObject(text, clazz);
+    public static <T> T toObject(String json, Class<T> clazz) {
+        return JSON.parseObject(json, clazz);
+    }
+
+    public static <T> T toObject(String json, Type type) {
+        return JSON.parseObject(json, type);
     }
 
     /**

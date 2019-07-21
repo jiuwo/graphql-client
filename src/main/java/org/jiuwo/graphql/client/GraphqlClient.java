@@ -1,14 +1,17 @@
 package org.jiuwo.graphql.client;
 
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.alibaba.fastjson.JSONObject;
 import org.jiuwo.graphql.client.contract.ExecutionResult;
 import org.jiuwo.graphql.client.contract.GraphqlRequest;
 import org.jiuwo.graphql.client.contract.ResultAttribute;
 import org.jiuwo.graphql.client.enums.RequestTypeEnum;
 import org.jiuwo.graphql.client.util.HttpUtil;
+import org.jiuwo.graphql.client.util.JsonUtil;
 
 /**
  * @author Steven Han
@@ -60,6 +63,22 @@ public class GraphqlClient {
         } else {
             return mutation();
         }
+    }
+
+    /**
+     * 执行请求
+     *
+     * @return 执行结果
+     */
+    public <T> ExecutionResult<T> executeSingle(Type type) {
+        ExecutionResult<T> executionResult = this.execute();
+        Object firstValue = ((JSONObject) executionResult.getData()).values().stream().findFirst().orElse(null);
+        if (firstValue == null) {
+            executionResult.setDataSingle(null);
+        } else {
+            executionResult.setDataSingle(JsonUtil.toObject(JsonUtil.toJson(firstValue), type));
+        }
+        return executionResult;
     }
 
     /**
@@ -174,18 +193,5 @@ public class GraphqlClient {
             requestBuilder.append("}");
         });
         return String.format(query, requestType.equals(RequestTypeEnum.QUERY) ? "" : "mutation", requestBuilder.toString());
-    }
-
-    public static void main(String[] args) {
-        String url = "http://localhost:8080/graphql";
-        ExecutionResult object = GraphqlClient
-                .build()
-                .url(url)
-                .requestType(RequestTypeEnum.QUERY)
-                .addHeader("hash", "haha")
-                .addRequest(GraphqlRequest.build("findBooks").addResultAttributes("id name").addResultAttribute("author", "id", "name"))
-                .addRequest(GraphqlRequest.build("findAuthors").addResultAttributes("id name"))
-                .execute();
-        System.out.println(object);
     }
 }

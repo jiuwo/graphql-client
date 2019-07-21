@@ -29,8 +29,14 @@ public class GraphqlClient {
      */
     private Map<String, String> headers = new HashMap<>();
 
+    /**
+     * 当前索引
+     */
     private int currentRequestIndex = 0;
 
+    /**
+     * Request Map
+     */
     private Map<Integer, GraphqlRequest> requestMap = new HashMap<>();
 
     /**

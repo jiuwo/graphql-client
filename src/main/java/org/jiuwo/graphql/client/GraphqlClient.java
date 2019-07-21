@@ -114,21 +114,44 @@ public class GraphqlClient {
         return this;
     }
 
+    /**
+     * 增加Request
+     *
+     * @param request Request
+     * @return this
+     */
     public GraphqlClient addRequest(GraphqlRequest request) {
         this.currentRequestIndex++;
         this.requestMap.put(this.currentRequestIndex, request);
         return this;
     }
 
+    /**
+     * 本次请求类型
+     *
+     * @param requestType 请求类型
+     * @return this
+     */
     public GraphqlClient requestType(RequestTypeEnum requestType) {
         this.requestType = requestType;
         return this;
     }
 
+    /**
+     * 根据索引取Request
+     *
+     * @param index 索引
+     * @return this
+     */
     private GraphqlRequest getRequest(int index) {
         return requestMap.get(index);
     }
 
+    /**
+     * 取当前Request
+     *
+     * @return request
+     */
     private GraphqlRequest getRequest() {
         return getRequest(this.currentRequestIndex);
     }

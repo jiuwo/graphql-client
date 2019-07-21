@@ -66,8 +66,9 @@ public class GraphqlClient {
     }
 
     /**
-     * 执行请求
+     * 执行请求-单个请求（如果多个请求用到此方法只返回第一个）
      *
+     * @param type 返回灵气类型
      * @return 执行结果
      */
     public <T> ExecutionResult<T> executeSingle(Type type) {

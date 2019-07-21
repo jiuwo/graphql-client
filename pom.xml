@@ -6,7 +6,7 @@
 
     <groupId>org.jiuwo</groupId>
     <artifactId>graphql-client</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 
     <name>org.jiuwo:graphql-client</name>
     <description>GraphQL客户端</description>
